@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>学生信息管理面板</title>
+    <!--引入css外部样式文件-->
+    <link rel="stylesheet" href="./css/index.css" />
+    <!--使用CDN引入Vue模块,vue3.0不可以在页面引入文件使用，2.0支持；所以在vue官网->文档->Vue2.0文档->安装->CDN引入 可找到页面引入代码-->
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.7.16/dist/vue.js"></script>
+    <!-- 引入Element样式 -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/element-ui/lib/theme-chalk/index.css"
+    />
+    <!-- 引入Element组件库 -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <!-- 引入Axios组件库 -->
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  </head>
+  <body>
+    <div id="app">
+      <el-container>
+        <el-header style="height: 80px">学生信息管理系统</el-header>
+        <el-container>
+          <!-- 侧边栏 -->
+          <el-aside width="200px">
+            <el-menu default-active="2" class="el-menu-vertical-demo">
+              <el-menu-item index="1">
+                <a href="#" target="_self">
+                  <i class="el-icon-menu"></i>
+                  <span slot="title">班级管理</span>
+                </a>
+              </el-menu-item>
+              <el-menu-item index="2">
+                <a href="#" target="_self">
+                  <i class="el-icon-user"></i>
+                  <span slot="title">学生信息</span>
+                </a>
+              </el-menu-item>
+              <el-menu-item index="3">
+                <a href="teacherManage.html" target="_self">
+                  <i class="el-icon-s-custom"></i>
+                  <span slot="title">讲师信息</span>
+                </a>
+              </el-menu-item>
+              <el-menu-item index="4">
+                <a href="#" target="_self">
+                  <i class="el-icon-document"></i>
+                  <span slot="title">课程管理</span>
+                </a>
+              </el-menu-item>
+            </el-menu>
+          </el-aside>
+          <el-container>
+            <!-- 主窗体 -->
+            <el-main>
+              <!-- 导航栏 -->
+              <el-breadcrumb separator-class="el-icon-arrow-right">
+                <el-breadcrumb-item>首页</el-breadcrumb-item>
+                <el-breadcrumb-item>学生管理</el-breadcrumb-item>
+              </el-breadcrumb>
+              <!-- 表单 -->
+              <el-form :inline="true" style="margin-top: 20px">
+                <el-row>
+                  <el-col :span="12">
+                    <el-form-item label="请输入查询条件：">
+                      <el-input
+                        v-model="inputStr"
+                        placeholder="查询条件"
+                        style="width: 420px"
+                      ></el-input>
+                    </el-form-item>
+                  </el-col>
+                  <el-col
+                    :span="8"
+                    style="text-align: right; padding-right: 20px"
+                  >
+                    <el-button-group>
+                      <el-button
+                        type="primary"
+                        icon="el-icon-search"
+                        @click="queryStudents()"
+                        >查询</el-button
+                      >
+                      <el-button
+                        type="primary"
+                        icon="el-icon-tickets"
+                        @click="getAllStudents()"
+                        >全部</el-button
+                      >
+                      <el-button
+                        type="primary"
+                        icon="el-icon-circle-plus-outline"
+                        @click="addStudent()"
+                        >添加</el-button
+                      >
+                    </el-button-group>
+                  </el-col>
+                  <el-col :span="4" style="display: flex">
+                    <el-upload
+                      action="#"
+                      :show-file-list="false"
+                      :http-request="uploadExcelPost"
+                      style="margin-right: 5px"
+                    >
+                      <el-button type="primary">导入Excel</el-button>
+                    </el-upload>
+                    <el-button type="primary" @click="exportExcelPost()"
+                      >导出Excel</el-button
+                    >
+                  </el-col>
+                </el-row>
+              </el-form>
+              <!-- 表格 -->
+              <el-table
+                :data="pageStudents"
+                border
+                style="width: 100%"
+                size="mini"
+                @selection-change="handleSelectionChange"
+              >
+                <el-table-column type="selection"> </el-table-column>
+                <el-table-column
+                  type="index"
+                  label="序号"
+                  align="center"
+                  width="60"
+                >
+                </el-table-column>
+                <el-table-column
+                  prop="sno"
+                  label="学号"
+                  align="center"
+                  width="80"
+                >
+                </el-table-column>
+                <el-table-column
+                  prop="name"
+                  label="姓名"
+                  align="center"
+                  width="80"
+                >
+                </el-table-column>
+                <el-table-column
+                  prop="gender"
+                  label="性别"
+                  align="center"
+                  width="60"
+                >
+                </el-table-column>
+                <el-table-column
+                  prop="birthday"
+                  label="出生日期"
+                  align="center"
+                  width="100"
+                >
+                </el-table-column>
+                <el-table-column
+                  prop="mobile"
+                  label="电话"
+                  align="center"
+                  width="120"
+                >
+                </el-table-column>
+                <el-table-column
+                  prop="email"
+                  label="邮箱"
+                  align="center"
+                  width="220"
+                >
+                </el-table-column>
+                <el-table-column prop="address" label="地址" align="center">
+                </el-table-column>
+                <el-table-column label="操作" width="180">
+                  <template slot-scope="scope">
+                    <el-button
+                      type="success"
+                      icon="el-icon-more"
+                      size="mini"
+                      circle
+                      @click="viewStudent(scope.row)"
+                    ></el-button>
+                    <el-button
+                      type="primary"
+                      icon="el-icon-edit"
+                      size="mini"
+                      circle
+                      @click="updateStudent(scope.row)"
+                    ></el-button>
+                    <el-button
+                      type="danger"
+                      icon="el-icon-delete"
+                      size="mini"
+                      circle
+                      @click="deleteStudent(scope.row)"
+                    ></el-button>
+                  </template>
+                </el-table-column>
+              </el-table>
+              <!-- 分页显示 -->
+              <el-row>
+                <el-col :span="8" style="text-align: left; margin-top: 10px">
+                  <el-button
+                    type="danger"
+                    icon="el-icon-delete"
+                    size="mini"
+                    @click="deleteStudents()"
+                    >批量删除</el-button
+                  >
+                </el-col>
+                <el-col :span="16" style="text-align: right; margin-top: 10px">
+                  <el-pagination
+                    @size-change="handleSizeChange"
+                    @current-change="handleCurrentChange"
+                    :current-page="currentPage"
+                    :page-sizes="[5, 10, 50, 100]"
+                    :page-size="pageSize"
+                    layout="total, sizes, prev, pager, next, jumper"
+                    :total="total"
+                  >
+                  </el-pagination>
+                </el-col>
+              </el-row>
+              <!-- 弹出框的学生明细表示 -->
+              <el-dialog
+                :title="dialogTitle"
+                :visible.sync="dialogVisible"
+                :close-on-click-modal="false"
+                @close="closeDialogForm('studentForm') "
+              >
+                <el-form
+                  :model="studentForm"
+                  :rules="rules"
+                  ref="studentForm"
+                  :inline="true"
+                  label-width="110px"
+                  style="margin-left: 15%; text-align: left"
+                  label-position="right"
+                  size="mini"
+                >
+                  <el-upload
+                    action="#"
+                    class="avatar-uploader"
+                    :show-file-list="false"
+                    :http-request="uploadPicturePost"
+                    :disabled="isView"
+                    style="
+                      margin-right: 15%;
+                      text-align: center;
+                      margin-bottom: 20px;
+                    "
+                  >
+                    <img
+                      v-if="studentForm.image"
+                      :src="studentForm.imageUrl"
+                      class="avatar"
+                    />
+                    <i v-else class="el-icon-plus avatar-uploader-icon"></i>
+                  </el-upload>
+                  <el-form-item label="学号：" prop="sno">
+                    <el-input
+                      suffix-icon="el-icon-edit"
+                      v-model="studentForm.sno"
+                      :disabled="isEdit||isView"
+                    ></el-input>
+                  </el-form-item>
+                  <el-form-item label="姓名：" prop="name">
+                    <el-input
+                      suffix-icon="el-icon-edit"
+                      v-model="studentForm.name"
+                      :disabled="isView"
+                    ></el-input>
+                  </el-form-item>
+                  <el-form-item label="性别：" prop="gender">
+                    <el-select
+                      placeholder="请选择性别"
+                      v-model="studentForm.gender"
+                      :disabled="isView"
+                    >
+                      <el-option label="男" value="男"></el-option>
+                      <el-option label="女" value="女"></el-option>
+                    </el-select>
+                  </el-form-item>
+                  <el-form-item label="出生日期：" prop="birthday">
+                    <el-date-picker
+                      v-model="studentForm.birthday"
+                      value-format="yyyy-MM-dd"
+                      type="date"
+                      style="width: 93%"
+                      placeholder="选择日期"
+                      :disabled="isView"
+                    >
+                    </el-date-picker>
+                  </el-form-item>
+                  <el-form-item label="手机号码：" prop="mobile">
+                    <el-input
+                      suffix-icon="el-icon-edit"
+                      v-model="studentForm.mobile"
+                      :disabled="isView"
+                    ></el-input>
+                  </el-form-item>
+                  <el-form-item label="邮箱地址：" prop="email">
+                    <el-input
+                      suffix-icon="el-icon-edit"
+                      v-model="studentForm.email"
+                      :disabled="isView"
+                    ></el-input>
+                  </el-form-item>
+                  <el-form-item label="家庭住址：" prop="address">
+                    <el-input
+                      suffix-icon="el-icon-edit"
+                      v-model="studentForm.address"
+                      style="width: 262%"
+                      :disabled="isView"
+                    ></el-input>
+                  </el-form-item>
+                </el-form>
+                <span slot="footer" class="dialog-footer">
+                  <el-button
+                    type="primary"
+                    size="mini"
+                    @click="submitStudentForm('studentForm') "
+                    v-show="!isView"
+                    >确定</el-button
+                  >
+                  <el-button
+                    type="info"
+                    size="mini"
+                    @click="closeDialogForm('studentForm') "
+                    v-show="!isView"
+                    >取消</el-button
+                  >
+                </span>
+              </el-dialog>
+            </el-main>
+            <el-footer style="height: 30px"
+              >学生信息管理系统 版权所有: Evan JC | 2024-3-26</el-footer
+            >
+          </el-container>
+        </el-container>
+      </el-container>
+    </div>
+  </body>
+</html>
+<!--引入Vue代码-->
+<script src="./js/index.js"></script>
